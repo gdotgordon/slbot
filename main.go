@@ -1,4 +1,6 @@
-// This program implements a simple example of a Slack bot.
+// This program implements a simple example of a Slack bot.  It has the capabiltiy
+// of taking the user to the Github site for this code plus it can show you a
+// picture of a certain dog.  Hey, it's my first bot ever!
 package main
 
 import (
@@ -29,16 +31,20 @@ func main() {
 	lg := log.New(os.Stdout, "ggbot: ", log.Lshortfile|log.LstdFlags)
 	ctx := context.Background()
 
-	s, err := NewPost(lg)
+	// Create the Slack event listener
+	s, err := NewSlack(lg)
 	if err != nil {
 		lg.Fatal(err)
 	}
 
+	// And run the event loop.
 	if err := s.Run(ctx); err != nil {
 		lg.Fatal(err)
 	}
 
-	handler, err := s.NewHandler()
+	// Since we are usering Interactive Components for callbacks,
+	// we need an HTTP handler.
+	handler, err := NewHandler()
 	if err != nil {
 		lg.Fatal(err)
 	}
@@ -50,7 +56,7 @@ func main() {
 		WriteTimeout: time.Duration(timeout) * time.Second,
 	}
 
-	// Start server
+	// Start the server.
 	go func() {
 		log.Println("[INFO] Listening for connections", "port", portNum)
 		if err := srv.ListenAndServe(); err != nil {

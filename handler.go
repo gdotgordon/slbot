@@ -1,9 +1,9 @@
 // The handler is the HTTP callback from Slack at the registered URL after
 // the uer has chosen some action.
 //
-// This is my modifcation of the sample in Gopher Academy at
-// https://github.com/sebito91/nhlslackbot, so here's the
-// required copyright:
+// This is my significantly modified version of the sample at Gopher Academy:
+// https://github.com/sebito91/nhlslackbot.  As it is an MIT licesne, here is
+// the required attribution:
 //
 //Copyright (c) 2017 Sebastian Borza
 //
@@ -22,17 +22,18 @@ import (
 	"net/http"
 	"strings"
 
-	/*
-		"github.com/go-chi/chi"
-		"github.com/go-chi/chi/middleware"
-		"github.com/go-chi/cors"
-	*/
 	"github.com/gorilla/mux"
 	"github.com/nlopes/slack"
 )
 
+// NewHandler instantiaties the web handler for listening on the API
+func NewHandler() (http.Handler, error) {
+	r := mux.NewRouter()
+	r.HandleFunc("/", postHandler).Methods(http.MethodPost)
+	return r, nil
+}
+
 func postHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("********incoming url: ", r.URL)
 	if r.URL.Path != "/" {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprintf("incorrect path: %s", r.URL.Path)))
@@ -69,49 +70,60 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//action := payload.Actions[0].Value
 	action := payload.ActionCallback.AttachmentActions[0]
-	fmt.Printf("Action: %+v\n", action)
-	switch action.Value {
-	case "yes":
-		w.Write([]byte("The source code is at https://github.com/gdotgordon/slbot!"))
-	case "no":
-		attachment := slack.Attachment{
-			Text:     "",
-			Color:    "#334fff",
-			ImageURL: "https://i.imgur.com/uVANlUI.jpg",
-			Actions:  []slack.AttachmentAction{},
-			Fields: []slack.AttachmentField{
-				{
-					Title: "A dog",
-				},
-			},
-		}
-		msg := payload.OriginalMessage
-		msg.Attachments = []slack.Attachment{attachment}
+	msg := payload.OriginalMessage
 
-		//w.Write([]byte("OK, but your missing something great!"))
-		origMsg := payload.OriginalMessage
-		fmt.Printf("original: %+v\n", origMsg)
-		origMsg.Attachments = []slack.Attachment{
-			{
-				Text:    "",
-				Actions: []slack.AttachmentAction{},
-				Fields: []slack.AttachmentField{
-					{
-						Title: "A dog",
+	//fmt.Printf("********got action value: %+v\n", action)
+	value := action.Value
+	if value == "" {
+		value = action.Name
+	}
+	switch value {
+	case "yesDog":
+		showDog(w, msg)
+		return
+	case "noDog":
+		w.Write([]byte("OK, but your missing a real cutie!"))
+	case "noCode":
+		w.Write([]byte("OK, I guess you prefer Java!"))
+	case "actionSelect":
+		value := action.SelectedOptions[0].Value
+		fmt.Printf("selected value: %+v\n", value)
+		switch action.SelectedOptions[0].Value {
+		case "Dog":
+			showDog(w, msg)
+			return
+		case "Code":
+			// Overwrite original drop down message.
+			msg.Attachments = []slack.Attachment{
+				{
+					Text:  "Would you like to see the source code for this bot, including instructions?",
+					Color: "#334fff",
+					Actions: []slack.AttachmentAction{
+						slack.AttachmentAction{
+							Name:  "action",
+							Text:  "Yes, I love Go code!",
+							Type:  "button",
+							Value: "yes_code",
+							URL:   "https://github.com/gdotgordon/slbot",
+						},
+						slack.AttachmentAction{
+							Name:  "action",
+							Text:  "No thanks, boring.",
+							Type:  "button",
+							Value: "noCode",
+						},
 					},
 				},
-				ImageURL: "https://i.imgur.com/uVANlUI.jpg",
-			},
+			}
+
+			w.Header().Add("Content-type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(&msg)
+			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		var b bytes.Buffer
-		json.NewEncoder(&b).Encode(&msg)
-		fmt.Println(b.String())
-		w.Write(b.Bytes())
-		return
+	case "actionCancel":
+		w.Write([]byte("Hope to hear from you again soon!"))
 	default:
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte(fmt.Sprintf("could not process callback: %s", action.Value)))
@@ -121,49 +133,24 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// askIntent is the initial request back to user if they'd like to see
-// the location of the repo
-func (s *Slack) askIntent(ev *slack.MessageEvent, user *slack.User) error {
-	params := slack.PostMessageParameters{}
+func showDog(w http.ResponseWriter, msg slack.Message) {
 	attachment := slack.Attachment{
-		Text:       "Would you like to see the source code for this bot?",
-		CallbackID: fmt.Sprintf("ask_%s", ev.User),
-		Color:      "#334fff",
-		Actions: []slack.AttachmentAction{
-			slack.AttachmentAction{
-				Name:  "action",
-				Text:  "Yes, I love Go code!",
-				Type:  "button",
-				Value: "yes",
-			},
-			slack.AttachmentAction{
-				Name:  "action",
-				Text:  "No thanks, boring.",
-				Type:  "button",
-				Value: "no",
+		Text:     "",
+		Color:    "#334fff",
+		ImageURL: "https://i.imgur.com/uVANlUI.jpg",
+		Actions:  []slack.AttachmentAction{},
+		Fields: []slack.AttachmentField{
+			{
+				Title: "A dog",
 			},
 		},
 	}
+	msg.Attachments = []slack.Attachment{attachment}
 
-	params.User = ev.User
-	params.AsUser = true
-
-	_, err := s.Client.PostEphemeral(
-		ev.Channel,
-		ev.User,
-		slack.MsgOptionAttachments(attachment),
-		slack.MsgOptionPostMessageParameters(params),
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// NewHandler instantiaties the web handler for listening on the API
-func (s *Slack) NewHandler() (http.Handler, error) {
-	r := mux.NewRouter()
-	r.HandleFunc("/", postHandler).Methods(http.MethodPost)
-	return r, nil
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	var b bytes.Buffer
+	json.NewEncoder(&b).Encode(&msg)
+	fmt.Println(b.String())
+	w.Write(b.Bytes())
 }
