@@ -1,3 +1,18 @@
+// This is the slack event listener code for when the user triggers
+// an action.
+//
+// This is my modifcation of the sample in Gopher Academy at
+// https://github.com/sebito91/nhlslackbot, so here's the
+// required copyright:
+//
+//Copyright (c) 2017 Sebastian Borza
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy
+//of this software and associated documentation files (the "Software"), to deal
+//in the Software without restriction, including without limitation the rights
+//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 package main
 
 import (
@@ -24,16 +39,15 @@ type Slack struct {
 }
 
 // NewPost returns a new instance of the Slack struct, primary for our slackbot
-func NewPost() (*Slack, error) {
+func NewPost(log *log.Logger) (*Slack, error) {
 	token := os.Getenv("SLACK_TOKEN")
 	if len(token) == 0 {
 		return nil, fmt.Errorf("could not discover API token")
 	}
 
 	return &Slack{
-		Client: slack.New(token,
-			slack.OptionLog(log.New(os.Stdout, "ggbot: ", log.Lshortfile|log.LstdFlags))),
-		Token: token, Name: "ggbot"}, nil
+		Client: slack.New(token, slack.OptionLog(log)),
+		Token:  token, Name: "ggbot", Logger: log}, nil
 }
 
 // Run is the primary service to generate and kick off the slackbot listener
@@ -55,9 +69,6 @@ func (s *Slack) Run(ctx context.Context) error {
 }
 
 func (s *Slack) run(ctx context.Context) {
-	//slack.SetLogger(s.Logger)
-	//	s.Client.SetDebug(true)
-
 	rtm := s.Client.NewRTM()
 	go rtm.ManageConnection()
 
@@ -69,6 +80,8 @@ func (s *Slack) run(ctx context.Context) {
 				continue
 			}
 
+			fmt.Println("message text", ev.Msg.Text)
+
 			// check if we have a DM, or standard channel post
 			direct := strings.HasPrefix(ev.Msg.Channel, "D")
 
@@ -77,15 +90,17 @@ func (s *Slack) run(ctx context.Context) {
 				continue
 			}
 
+			//fmt.Printf("event: %+v\n", ev)
 			user, err := s.Client.GetUserInfo(ev.User)
 			if err != nil {
 				s.Logger.Printf("[WARN]  could not grab user information: %s", ev.User)
 				continue
 			}
+			//fmt.Printf("user: %+v\n", user)
 
 			s.Logger.Printf("[DEBUG] received message from %s (%s)\n", user.Profile.RealName, ev.User)
 
-			err = s.askIntent(ev)
+			err = s.askIntent(ev, user)
 			if err != nil {
 				s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
 			}
