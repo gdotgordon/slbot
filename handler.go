@@ -87,8 +87,6 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	case "noCode":
 		w.Write([]byte("OK, I guess you prefer Java!"))
 	case "actionSelect":
-		value := action.SelectedOptions[0].Value
-		fmt.Printf("selected value: %+v\n", value)
 		switch action.SelectedOptions[0].Value {
 		case "Dog":
 			showDog(w, msg)
