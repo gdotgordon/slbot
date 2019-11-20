@@ -10,7 +10,7 @@ The architecture is basically a Slack event listener coupled with an HTTP handle
 ## How Do I Use It
 I've pretty much already described how this works.  The initial functionality provides two "services" - taking the user to this Github site to view the source code, and also to show a picture of me.  There are two ways you can activate the bot:
 
-- Direct Message ggbot: start or resume a DM to "ggbot".  If you ask something with one of the two keywords "code" or "picture", it will ask you if you want to proceed with those, and will take you to the code or show the picture if you do.
+- Direct Message ggbot: start or resume a DM to "ggbot".  If you ask something with one of the two keywords "code" or "picture", it will ask you if you want to proceed with those, and will take you to the code or show the picture if you do.  If you type anything else, it will give you a pop-up with the two choices.
 
 - Go to a channel "ggbot has joined (such as "general") and type`@ggbot` plus a space (or anything to make the reference active), then send the message.  You'll get a dropdown menu with two options: see a picture of me, or open a browser to this github repo.  Regardless of which one you choose, you'll then get a Yes/No confirmation to proceed.  Click the button of your choice.  Or you can address it with words containing "picture" or "code", as in `@ggbot picture` or `@ggbot Go code is cool.` to have it ask if you want that specific action done.
 
