@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/nlopes/slack"
@@ -100,20 +101,24 @@ func (s *Slack) run(ctx context.Context) {
 			}
 			s.Logger.Printf("[DEBUG] received message from %s (%s)\n", user.Profile.RealName, ev.User)
 
-			if strings.Contains(ev.Msg.Text, "code") {
+			match, _ := regexp.MatchString("(?i)\\bcode\\b", ev.Msg.Text)
+			if match {
 				err = s.askCodeIntent(ev, user)
 				if err != nil {
 					s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
 				}
-			} else if strings.Contains(ev.Msg.Text, "dog") {
-				err = s.askDogIntent(ev, user)
-				if err != nil {
-					s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
-				}
 			} else {
-				err = s.askGeneralIntent(ev, user)
-				if err != nil {
-					s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
+				match, _ = regexp.MatchString("(?i)\\bpicture\\b", ev.Msg.Text)
+				if match {
+					err = s.askMeIntent(ev, user)
+					if err != nil {
+						s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
+					}
+				} else {
+					err = s.askGeneralIntent(ev, user)
+					if err != nil {
+						s.Logger.Printf("[ERROR] posting ephemeral reply to user (%s): %+v\n", ev.User, err)
+					}
 				}
 			}
 		case *slack.RTMError:
@@ -143,11 +148,11 @@ func (s *Slack) askCodeIntent(ev *slack.MessageEvent, user *slack.User) error {
 	return nil
 }
 
-// askDogIntent is the initial request back to user if they'd like to see
+// askMeIntent is the initial request back to user if they'd like to see
 // the location of the repo
-func (s *Slack) askDogIntent(ev *slack.MessageEvent, user *slack.User) error {
+func (s *Slack) askMeIntent(ev *slack.MessageEvent, user *slack.User) error {
 	params := slack.PostMessageParameters{}
-	attachment := dogAttachment(ev.User)
+	attachment := meAttachment(ev.User)
 
 	params.User = ev.User
 	params.AsUser = true
@@ -156,7 +161,7 @@ func (s *Slack) askDogIntent(ev *slack.MessageEvent, user *slack.User) error {
 }
 
 // askGeneralIntent is the initial request back to user if they haven't specifed
-// a particular supported keyword (dog or code).  It puts up a menu of choices.
+// a particular supported keyword (me or code).  It puts up a menu of choices.
 func (s *Slack) askGeneralIntent(ev *slack.MessageEvent, user *slack.User) error {
 	params := slack.PostMessageParameters{}
 	attachment := slack.Attachment{
@@ -174,8 +179,8 @@ func (s *Slack) askGeneralIntent(ev *slack.MessageEvent, user *slack.User) error
 						Value: "Code",
 					},
 					{
-						Text:  "See a Cute Dog",
-						Value: "Dog",
+						Text:  "See A Picture of Me",
+						Value: "Me",
 					},
 				},
 			},
@@ -221,7 +226,7 @@ func codeAttachment(user string) slack.Attachment {
 			},
 			slack.AttachmentAction{
 				Name:  "action",
-				Text:  "No thanks, boring.",
+				Text:  "No thanks.",
 				Type:  "button",
 				Value: "noCode",
 			},
@@ -229,23 +234,23 @@ func codeAttachment(user string) slack.Attachment {
 	}
 }
 
-func dogAttachment(user string) slack.Attachment {
+func meAttachment(user string) slack.Attachment {
 	return slack.Attachment{
-		Text:       "Would you like to see a picture of a dog?",
+		Text:       "Would you like to see a picture of a me?",
 		CallbackID: fmt.Sprintf("ask_%s", user),
 		Color:      "#334fff",
 		Actions: []slack.AttachmentAction{
 			{
-				Name:  "yesDog",
-				Text:  "Yes, I love dogs!",
+				Name:  "yesMe",
+				Text:  "Yes, definitely!",
 				Type:  "button",
-				Value: "yesDog",
+				Value: "yesMe",
 			},
 			{
-				Name:  "noDog",
-				Text:  "No thanks, I prefer cats.",
+				Name:  "noMe",
+				Text:  "No thanks",
 				Type:  "button",
-				Value: "noDog",
+				Value: "noMe",
 			},
 		},
 	}

@@ -79,17 +79,17 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		value = action.Name
 	}
 	switch value {
-	case "yesDog":
-		showDog(w, msg)
+	case "yesMe":
+		showMe(w, msg)
 		return
-	case "noDog":
-		w.Write([]byte("OK, but your missing a real cutie!"))
+	case "noMe":
+		w.Write([]byte("OK, but I assure you I'm a nice guy!"))
 	case "noCode":
 		w.Write([]byte("OK, I guess you prefer Java!"))
 	case "actionSelect":
 		switch action.SelectedOptions[0].Value {
-		case "Dog":
-			showDog(w, msg)
+		case "Me":
+			showMe(w, msg)
 			return
 		case "Code":
 			// Overwrite original drop down message.
@@ -131,15 +131,15 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func showDog(w http.ResponseWriter, msg slack.Message) {
+func showMe(w http.ResponseWriter, msg slack.Message) {
 	attachment := slack.Attachment{
 		Text:     "",
 		Color:    "#334fff",
-		ImageURL: "https://i.imgur.com/uVANlUI.jpg",
+		ImageURL: "https://i.imgur.com/VlU0uLt.jpg",
 		Actions:  []slack.AttachmentAction{},
 		Fields: []slack.AttachmentField{
 			{
-				Title: "A dog",
+				Title: "Me",
 			},
 		},
 	}
