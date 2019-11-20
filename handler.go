@@ -83,9 +83,13 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		showMe(w, msg)
 		return
 	case "noMe":
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK, but I assure you I'm a nice guy!"))
+		return
 	case "noCode":
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK, I guess you prefer Java!"))
+		return
 	case "actionSelect":
 		switch action.SelectedOptions[0].Value {
 		case "Me":
@@ -121,7 +125,9 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "actionCancel":
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Hope to hear from you again soon!"))
+		return
 	default:
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte(fmt.Sprintf("could not process callback: %s", action.Value)))
@@ -149,6 +155,6 @@ func showMe(w http.ResponseWriter, msg slack.Message) {
 	w.WriteHeader(http.StatusOK)
 	var b bytes.Buffer
 	json.NewEncoder(&b).Encode(&msg)
-	fmt.Println(b.String())
+	//fmt.Println(b.String())
 	w.Write(b.Bytes())
 }
