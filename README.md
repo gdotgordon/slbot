@@ -10,4 +10,6 @@ The arhcitecture is basically a Slack event listener coupled with an HTTP handle
 ## How Do I Use It
 The initial functionality provides two "services": taking the user to this Github site to view the source code, and also to show a picture of me.  You can either simply invoke the bot by typing `@ggbot` plus a space to make the link active, then send ther message.  You'll get a dropdown menu with two options: see a picture of me, or open a browser to this github repo.  Regardless of which one you choose, you'll then get a Yes/No confirmaton to proceed.  Click the button of your choice.
 
-The other way to use the bot is to address it with words containing "picture" or "code", as in `@ggbot picture` or `@ggbot code is cool`.  In this 
+The other way to use the bot is to address it with words containing "picture" or "code", as in `@ggbot picture` or `@ggbot code is cool`.
+
+Enjoy!
